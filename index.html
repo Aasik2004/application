@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Catch the Ball Game</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+  body {
+    margin: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: white;
+    user-select: none;
+  }
+  #game {
+    position: relative;
+    background: #1e1e2f;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(118, 75, 162, 0.7);
+    width: 400px;
+    height: 600px;
+    overflow: hidden;
+  }
+  #score {
+    text-align: center;
+    font-size: 1.5rem;
+    margin: 15px 0 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+  }
+  canvas {
+    display: block;
+    background: #27293d;
+    margin: 0 auto;
+    border-radius: 15px;
+  }
+  #instruction {
+    text-align: center;
+    font-size: 0.9rem;
+    padding: 10px 0 15px;
+    color: #bbb;
+  }
+</style>
+</head>
+<body>
+  <div id="game" role="main" aria-label="Catch the Ball Game">
+    <div id="score" aria-live="polite">Score: 0</div>
+    <canvas id="gameCanvas" width="400" height="500" aria-label="Game canvas"></canvas>
+    <div id="instruction">Use left and right arrow keys or move mouse to catch the balls!</div>
+  </div>
+<script>
+  (() => {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const paddleWidth = 100;
+    const paddleHeight = 15;
+    let paddleX = (canvas.width - paddleWidth) / 2;
+
+    const ballRadius = 15;
+    let ballX = Math.random() * (canvas.width - ballRadius * 2) + ballRadius;
+    let ballY = -ballRadius;
+    let ballSpeed = 3;
+
+    let score = 0;
+    const scoreDisplay = document.getElementById('score');
+
+    let gameOver = false;
+
+    function drawPaddle() {
+      ctx.fillStyle = '#764ba2';
+      ctx.shadowColor = '#9f7aea';
+      ctx.shadowBlur = 10;
+      ctx.fillRect(paddleX, canvas.height - paddleHeight - 10, paddleWidth, paddleHeight);
+      ctx.shadowBlur = 0;
+    }
+
+    function drawBall() {
+      const gradient = ctx.createRadialGradient(ballX, ballY, ballRadius * 0.2, ballX, ballY, ballRadius);
+      gradient.addColorStop(0, '#ffb347');
+      gradient.addColorStop(1, '#ffcc33');
+      ctx.fillStyle = gradient;
+      ctx.shadowColor = '#f9d976';
+      ctx.shadowBlur = 15;
+      ctx.beginPath();
+      ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function draw() {
+      clearCanvas();
+      drawPaddle();
+      drawBall();
+    }
+
+    function update() {
+      ballY += ballSpeed;
+
+      // Check collision with paddle
+      if (
+        ballY + ballRadius >= canvas.height - paddleHeight - 10 &&
+        ballX >= paddleX &&
+        ballX <= paddleX + paddleWidth
+      ) {
+        score++;
+        ballSpeed += 0.15; // increase speed slightly each catch
+        scoreDisplay.textContent = `Score: ${score}`;
+        resetBall();
+      }
+      // Check if ball falls below paddle
+      else if (ballY - ballRadius > canvas.height) {
+        gameOver = true;
+      }
+    }
+
+    function resetBall() {
+      ballX = Math.random() * (canvas.width - ballRadius * 2) + ballRadius;
+      ballY = -ballRadius;
+    }
+
+    function gameLoop() {
+      if (gameOver) {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#ff6b6b';
+        ctx.font = 'bold 36px Poppins, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Game Over!', canvas.width / 2, canvas.height / 2 - 20);
+        ctx.font = '20px Poppins, sans-serif';
+        ctx.fillText(`Final Score: ${score}`, canvas.width / 2, canvas.height / 2 + 20);
+        ctx.fillText('Refresh to play again', canvas.width / 2, canvas.height / 2 + 50);
+        return;
+      }
+      draw();
+      update();
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Paddle movement: arrow keys
+    document.addEventListener('keydown', e => {
+      const step = 20;
+      if (e.key === 'ArrowLeft') {
+        paddleX = Math.max(0, paddleX - step);
+      } else if (e.key === 'ArrowRight') {
+        paddleX = Math.min(canvas.width - paddleWidth, paddleX + step);
+      }
+    });
+
+    // Paddle movement: mouse
+    canvas.addEventListener('mousemove', e => {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      paddleX = Math.min(Math.max(mouseX - paddleWidth / 2, 0), canvas.width - paddleWidth);
+    });
+
+    // Start the game loop
+    requestAnimationFrame(gameLoop);
+  })();
+</script>
+</body>
+</html>
+
